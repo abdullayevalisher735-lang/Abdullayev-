@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Davomat – 402-guruh</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+  /* HEADER */
+  .top-header {
+    background: linear-gradient(135deg, #1a365d, #2b6cb0);
+    color: white;
+    padding: 16px 20px;
+    text-align: center;
+  }
+  .top-header h1 { font-size: 1.3rem; font-weight: 800; }
+  .top-header p  { font-size: 0.82rem; opacity: 0.85; margin-top: 3px; }
+
+  /* TOOLBAR */
+  .toolbar {
+    background: white;
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    position: sticky; top: 0; z-index: 50;
+    border-bottom: 3px solid #2b6cb0;
+  }
+  .toolbar input[type=text] {
+    padding: 8px 12px; border: 2px solid #e2e8f0; border-radius: 8px;
+    font-size: 0.85rem; outline: none; min-width: 150px;
+  }
+  .toolbar input:focus { border-color: #3182ce; }
+  .btn {
+    padding: 8px 16px; border: none; border-radius: 8px;
+    font-weight: 700; font-size: 0.83rem; cursor: pointer;
+    transition: all 0.18s; white-space: nowrap;
+  }
+  .btn-add  { background: #2b6cb0; color: white; }
+  .btn-add:hover { background: #2c5282; }
+  .btn-save { background: #38a169; color: white; }
+  .btn-save:hover { background: #276749; }
+  .btn-del  { background: #fed7d7; color: #c53030; padding: 4px 8px; font-size: 0.75rem; border-radius: 5px; border:none; cursor:pointer; }
+  .btn-del:hover { background: #feb2b2; }
+
+  /* STATS */
+  .stats {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    padding: 12px 16px; background: #ebf8ff;
+    border-bottom: 1px solid #bee3f8;
+  }
+  .stat-card {
+    background: white; border-radius: 10px; padding: 8px 16px;
+    text-align: center; min-width: 80px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+  }
+  .stat-card .n { font-size: 1.4rem; font-weight: 900; }
+  .stat-card .l { font-size: 0.7rem; color: #718096; }
+  .stat-card.blue .n  { color: #2b6cb0; }
+  .stat-card.green .n { color: #38a169; }
+  .stat-card.red .n   { color: #e53e3e; }
+  .stat-card.pct .n   { color: #d69e2e; }
+
+  /* TABLE WRAPPER */
+  .table-wrap { padding: 16px; overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.09);
+    min-width: 320px;
+  }
+
+  /* HEADER ROW */
+  thead th {
+    background: #1a365d;
+    color: white;
+    padding: 12px 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    border: 1px solid #2b6cb0;
+  }
+  thead th.name-col { text-align: left; padding-left: 14px; min-width: 180px; }
+  thead th.num-col  { width: 40px; }
+
+  /* DATE HEADER */
+  .date-head { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .date-head .date-label { font-size: 0.75rem; font-weight: 700; }
+  .date-head .date-sub   { font-size: 0.65rem; opacity: 0.75; }
+
+  /* BODY ROWS */
+  tbody tr { border-bottom: 1px solid #e2e8f0; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:nth-child(even) { background: #f7fafc; }
+  tbody tr:hover { background: #ebf8ff; }
+
+  td {
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    vertical-align: middle;
+  }
+  td.num-td {
+    font-size: 0.8rem; color: #a0aec0; font-weight: 600; width: 36px;
+  }
+  td.name-td {
+    text-align: left; padding-left: 14px;
+    font-size: 0.9rem; font-weight: 600; color: #1a365d;
+    min-width: 180px;
+  }
+  td.pct-td { font-weight: 800; font-size: 0.88rem; min-width: 60px; }
+
+  /* CHECKBOX STYLE — xuddi rasmdagidek */
+  .cb-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .cb-box {
+    width: 28px;
+    height: 28px;
+    border: 2.5px solid #3182ce;
+    border-radius: 5px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .cb-box:hover { border-color: #2b6cb0; background: #ebf8ff; }
+  .cb-box.checked-k  { background: #3182ce; border-color: #2b6cb0; }
+  .cb-box.checked-x  { background: #e53e3e; border-color: #c53030; }
+  .cb-box.checked-ke { background: #d69e2e; border-color: #b7791f; }
+
+  /* Checkmark SVG */
+  .cb-box.checked-k::after,
+  .cb-box.checked-x::after,
+  .cb-box.checked-ke::after {
+    content: '';
+    display: block;
+  }
+  .check-icon { display: none; }
+  .cb-box.checked-k  .check-icon { display: block; }
+  .cb-box.checked-x  .x-icon     { display: block; }
+  .cb-box.checked-ke .ke-icon    { display: block; }
+
+  .check-icon, .x-icon, .ke-icon { display: none; }
+
+  /* LEGEND */
+  .legend {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    padding: 10px 16px; font-size: 0.8rem; color: #4a5568;
+    background: white; border-bottom: 1px solid #e2e8f0;
+  }
+  .leg { display: flex; align-items: center; gap: 6px; }
+  .leg-box {
+    width: 22px; height: 22px; border-radius: 4px;
+    border: 2.5px solid;
+  }
+  .leg-k  { background: #3182ce; border-color: #2b6cb0; }
+  .leg-x  { background: #e53e3e; border-color: #c53030; }
+  .leg-ke { background: #d69e2e; border-color: #b7791f; }
+  .leg-empty { background: white; border-color: #3182ce; }
+
+  /* EMPTY */
+  .empty-info {
+    text-align: center; padding: 48px 20px;
+    color: #a0aec0; font-size: 0.9rem;
+  }
+
+  /* MARK ALL row */
+  .mark-all-btns { display: flex; gap: 3px; justify-content: center; margin-top: 5px; }
+  .mark-all-btns button {
+    font-size: 0.65rem; padding: 2px 5px; border-radius: 4px; border: none;
+    cursor: pointer; font-weight: 700;
+  }
+  .ma-k  { background: #bee3f8; color: #2b6cb0; }
+  .ma-x  { background: #fed7d7; color: #c53030; }
+  .ma-ke { background: #fefcbf; color: #b7791f; }
+  .ma-k:hover  { background: #90cdf4; }
+  .ma-x:hover  { background: #feb2b2; }
+  .ma-ke:hover { background: #faf089; }
+
+  @media (max-width: 480px) {
+    .cb-box { width: 32px; height: 32px; }
+    td { padding: 8px 4px; }
+    td.name-td { font-size: 0.82rem; }
+    .top-header h1 { font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-header">
+  <h1>📋 Davomat — 213-24 / 402-guruh</h1>
+  <p>СИ (ma'ruza) · FAI003</p>
+</div>
+
+<div class="toolbar">
+  <input type="text" id="paraName" placeholder="Para nomi (masalan: 1-para)" style="width:170px">
+  <button class="btn btn-add" onclick="addPara()">+ Para qo'sh</button>
+  <button class="btn btn-save" onclick="saveData()">💾 Saqlash</button>
+  <button class="btn" style="background:#e2e8f0;color:#4a5568" onclick="exportCSV()">📥 CSV</button>
+</div>
+
+<div class="legend">
+  <div class="leg"><div class="leg-box leg-empty"></div> Belgilanmagan</div>
+  <div class="leg"><div class="leg-box leg-k"></div> ✅ Keldi</div>
+  <div class="leg"><div class="leg-box leg-x"></div> ❌ Kelmadi</div>
+  <div class="leg"><div class="leg-box leg-ke"></div> ⚠️ Kechikdi</div>
+  <small style="color:#718096;margin-left:auto">Bir marta bos = Keldi &nbsp;|&nbsp; Ikki = Kelmadi &nbsp;|&nbsp; Uch = Kechikdi &nbsp;|&nbsp; To'rt = Bo'sh</small>
+</div>
+
+<div class="stats" id="statsBar"></div>
+
+<div class="table-wrap">
+  <div class="empty-info" id="emptyMsg">
+    ☝️ Yuqoridan para nomi kiriting va <strong>"+ Para qo'sh"</strong> tugmasini bosing
+  </div>
+  <table id="mainTable" style="display:none">
+    <thead id="tHead"></thead>
+    <tbody id="tBody"></tbody>
+  </table>
+</div>
+
+<script>
+const STUDENTS = [
+  "Abdullayev Raufjon Rahmonjon o'g'li",
+  "Abdulloyev Alisher Amin o'g'li",
+  "Elmuratov Eldor Komekbay ug'li",
+  "Ibroximov Husniddin Elbekovich",
+  "Joldashbayeva Mohira Faxraddin qizi",
+  "Jurayev Asliddin Yusuf o'g'li",
+  "Koptileuova Aziza Xamid qizi",
+  "Mahamadxo'jayev Ibrohimxo'ja Mavlonxo'ja o'g'li",
+  "Mashraboyev Samandar Urinboy o'g'li",
+  "Maxmadaminov Abduxofiz Jasur o'g'li",
+  "Murodov Shaxriyor Hafiz o'g'li",
+  "Muxiddinova Ruxshona Yorqinjon qizi",
+  "Normuxamedov Toxir Asliddin o'g'li",
+  "Olimjonova Zilola Oybek qizi",
+  "Qurbonov Javohir Chorshanbi o'g'li",
+  "Sayfilloyev Ozodbek O'ktobir o'g'li",
+  "Shoydullayev Fazliddin Baxtiyor ugli",
+  "Tojiboyeva Mohinur Azamjon qizi",
+  "Xalilov Abdullaxon Komil o'g'li",
+  "Xalilova Ziyoda Shokirjon qizi",
+  "Xujamberdiyev Samandar Abdurazzoqovich",
+  "Yaxshilikov Sherzod Ikromovich"
+];
+
+// state: { paras: [{id, name}], records: {studentIdx: {paraId: ''|'K'|'X'|'KE'}} }
+let state = { paras: [], records: {} };
+STUDENTS.forEach((_, i) => state.records[i] = {});
+
+// Load from localStorage
+try {
+  const saved = localStorage.getItem('davomat_402_v2');
+  if (saved) {
+    state = JSON.parse(saved);
+    STUDENTS.forEach((_, i) => { if (!state.records[i]) state.records[i] = {}; });
+  }
+} catch(e) {}
+
+function save() {
+  localStorage.setItem('davomat_402_v2', JSON.stringify(state));
+}
+
+function saveData() {
+  save();
+  const btn = document.querySelector('.btn-save');
+  const orig = btn.textContent;
+  btn.textContent = '✅ Saqlandi!';
+  setTimeout(() => btn.textContent = orig, 1500);
+}
+
+function addPara() {
+  const name = document.getElementById('paraName').value.trim();
+  if (!name) { alert('Para nomini kiriting!'); return; }
+  const id = 'p_' + Date.now();
+  state.paras.push({ id, name });
+  document.getElementById('paraName').value = '';
+  save();
+  render();
+}
+
+function removePara(id) {
+  if (!confirm('Bu parani o\'chirishni tasdiqlaysizmi?')) return;
+  state.paras = state.paras.filter(p => p.id !== id);
+  STUDENTS.forEach((_, i) => delete state.records[i][id]);
+  save();
+  render();
+}
+
+// Cycle: '' -> K -> X -> KE -> ''
+function cycle(sIdx, paraId) {
+  const cur = state.records[sIdx][paraId] || '';
+  const next = cur === '' ? 'K' : cur === 'K' ? 'X' : cur === 'X' ? 'KE' : '';
+  state.records[sIdx][paraId] = next;
+  save();
+  updateCell(sIdx, paraId);
+  updateRow(sIdx);
+  updateStats();
+}
+
+function markAll(paraId, val) {
+  STUDENTS.forEach((_, i) => state.records[i][paraId] = val);
+  save();
+  render();
+}
+
+function getCbClass(val) {
+  if (val === 'K')  return 'checked-k';
+  if (val === 'X')  return 'checked-x';
+  if (val === 'KE') return 'checked-ke';
+  return '';
+}
+
+function getCbInner(val) {
+  if (val === 'K') return `<svg class="check-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><polyline points="2,8 6,13 14,3" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  if (val === 'X') return `<svg class="x-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" style="display:block"><line x1="2" y1="2" x2="12" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/><line x1="12" y1="2" x2="2" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>`;
+  if (val === 'KE') return `<svg class="ke-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" style="display:block"><text x="2" y="12" font-size="11" fill="white" font-weight="bold">KE</text></svg>`;
+  return '';
+}
+
+function updateCell(sIdx, paraId) {
+  const cell = document.getElementById(`cb_${sIdx}_${paraId}`);
+  if (!cell) return;
+  const val = state.records[sIdx][paraId] || '';
+  cell.className = 'cb-box ' + getCbClass(val);
+  cell.innerHTML = getCbInner(val);
+}
+
+function updateRow(sIdx) {
+  const pctCell = document.getElementById(`pct_${sIdx}`);
+  if (!pctCell) return;
+  let k=0, x=0, ke=0;
+  state.paras.forEach(p => {
+    const v = state.records[sIdx][p.id] || '';
+    if (v==='K') k++; else if (v==='X') x++; else if (v==='KE') ke++;
+  });
+  const total = k + x + ke;
+  if (total === 0) { pctCell.textContent = '—'; pctCell.style.color = '#a0aec0'; return; }
+  const pct = Math.round((k + ke*0.5) / total * 100);
+  pctCell.textContent = pct + '%';
+  pctCell.style.color = pct >= 80 ? '#38a169' : pct >= 60 ? '#d69e2e' : '#e53e3e';
+}
+
+function updateStats() {
+  let totalK=0, totalX=0, totalKE=0, marked=0;
+  STUDENTS.forEach((_, i) => {
+    state.paras.forEach(p => {
+      const v = state.records[i][p.id] || '';
+      if (v==='K') totalK++; else if (v==='X') totalX++; else if (v==='KE') totalKE++;
+    });
+  });
+  marked = totalK + totalX + totalKE;
+  const pct = marked > 0 ? Math.round(totalK / marked * 100) : 0;
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-card blue"><div class="n">${STUDENTS.length}</div><div class="l">Talabalar</div></div>
+    <div class="stat-card blue"><div class="n">${state.paras.length}</div><div class="l">Paralar</div></div>
+    <div class="stat-card green"><div class="n">${totalK}</div><div class="l">✅ Keldi</div></div>
+    <div class="stat-card red"><div class="n">${totalX}</div><div class="l">❌ Kelmadi</div></div>
+    <div class="stat-card pct"><div class="n">${totalKE}</div><div class="l">⚠️ Kechikdi</div></div>
+    <div class="stat-card ${pct>=75?'green':'red'}"><div class="n">${marked?pct+'%':'—'}</div><div class="l">Davomat</div></div>
+  `;
+}
+
+function render() {
+  const tHead = document.getElementById('tHead');
+  const tBody = document.getElementById('tBody');
+  const empty = document.getElementById('emptyMsg');
+  const table = document.getElementById('mainTable');
+
+  if (state.paras.length === 0) {
+    empty.style.display = 'block';
+    table.style.display = 'none';
+    updateStats();
+    return;
+  }
+  empty.style.display = 'none';
+  table.style.display = 'table';
+
+  // HEAD
+  let hHtml = `<tr>
+    <th class="num-col">№</th>
+    <th class="name-col">TALABA F.I.SH</th>`;
+  state.paras.forEach(p => {
+    hHtml += `<th>
+      <div class="date-head">
+        <span class="date-label">${escHtml(p.name)}</span>
+        <button class="btn-del" onclick="removePara('${p.id}')">✕</button>
+      </div>
+      <div class="mark-all-btns">
+        <button class="ma-k"  onclick="markAll('${p.id}','K')">Barchasi ✅</button>
+        <button class="ma-x"  onclick="markAll('${p.id}','X')">❌</button>
+        <button class="ma-ke" onclick="markAll('${p.id}','KE')">⚠️</button>
+      </div>
+    </th>`;
+  });
+  hHtml += `<th>%</th></tr>`;
+  tHead.innerHTML = hHtml;
+
+  // BODY
+  let bHtml = '';
+  STUDENTS.forEach((name, i) => {
+    bHtml += `<tr>
+      <td class="num-td">${i+1}</td>
+      <td class="name-td">${escHtml(name)}</td>`;
+    state.paras.forEach(p => {
+      const val = state.records[i][p.id] || '';
+      const cls = getCbClass(val);
+      const inner = getCbInner(val);
+      bHtml += `<td>
+        <div class="cb-wrap" onclick="cycle(${i},'${p.id}')">
+          <div class="cb-box ${cls}" id="cb_${i}_${p.id}">${inner}</div>
+        </div>
+      </td>`;
+    });
+    // pct
+    let k=0,x=0,ke=0;
+    state.paras.forEach(p => {
+      const v = state.records[i][p.id]||'';
+      if(v==='K')k++; else if(v==='X')x++; else if(v==='KE')ke++;
+    });
+    const total=k+x+ke;
+    let pctTxt='—', pctColor='#a0aec0';
+    if(total>0){
+      const pct=Math.round((k+ke*0.5)/total*100);
+      pctTxt=pct+'%';
+      pctColor=pct>=80?'#38a169':pct>=60?'#d69e2e':'#e53e3e';
+    }
+    bHtml += `<td class="pct-td" id="pct_${i}" style="color:${pctColor}">${pctTxt}</td>`;
+    bHtml += `</tr>`;
+  });
+  tBody.innerHTML = bHtml;
+
+  updateStats();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function exportCSV() {
+  let csv = 'Talaba,' + state.paras.map(p=>p.name).join(',') + ',Keldi,Kelmadi,Kechikdi,Foiz\n';
+  STUDENTS.forEach((name, i) => {
+    let k=0,x=0,ke=0;
+    let row = `"${name}",`;
+    row += state.paras.map(p => {
+      const v = state.records[i][p.id]||'';
+      if(v==='K')k++; else if(v==='X')x++; else if(v==='KE')ke++;
+      return v||'-';
+    }).join(',');
+    const total=k+x+ke;
+    const pct=total>0?Math.round((k+ke*0.5)/total*100)+'%':'—';
+    row+=`,${k},${x},${ke},${pct}`;
+    csv+=row+'\n';
+  });
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='davomat_402_guruh.csv';
+  a.click();
+}
+
+render();
+</script>
+</body>
+</html>
